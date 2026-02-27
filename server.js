@@ -1,8 +1,33 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
+
+// 修复 Windows 上传路径问题（Zeabur upload-codebase 在 Windows 会用反斜杠打包）
+const publicDir = path.join(__dirname, 'public');
+if (!fs.existsSync(publicDir)) {
+  fs.mkdirSync(publicDir, { recursive: true });
+  const rootFiles = fs.readdirSync(__dirname);
+  for (const f of rootFiles) {
+    if (f.startsWith('public\\') || f.startsWith('public/')) {
+      const newName = f.replace(/^public[\\/]/, '');
+      fs.renameSync(path.join(__dirname, f), path.join(publicDir, newName));
+    }
+  }
+}
+// 同样修复 api/ 目录
+const apiDir = path.join(__dirname, 'api');
+if (!fs.existsSync(apiDir)) {
+  fs.mkdirSync(apiDir, { recursive: true });
+  const rootFiles = fs.readdirSync(__dirname);
+  for (const f of rootFiles) {
+    if (f.startsWith('api\\') || f.startsWith('api/')) {
+      const newName = f.replace(/^api[\\/]/, '');
+      fs.renameSync(path.join(__dirname, f), path.join(apiDir, newName));
+    }
+  }
+}
 
 // 读取 .env 文件（不依赖 dotenv 包）
-const fs = require('fs');
 try {
   const envFile = fs.readFileSync(path.join(__dirname, '.env'), 'utf8');
   envFile.split('\n').forEach(line => {
