@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>卖点提炼器 - AI帮你快速提炼产品核心卖点</title>
+  <meta name="description" content="输入你的产品描述，AI帮你提炼价值主张、核心卖点、用户画像、电梯演讲稿和朋友圈文案">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in-up {
+      animation: fadeInUp 0.5s ease-out forwards;
+    }
+    .result-card:nth-child(2) { animation-delay: 0.1s; }
+    .result-card:nth-child(3) { animation-delay: 0.2s; }
+    .result-card:nth-child(4) { animation-delay: 0.3s; }
+    .result-card:nth-child(5) { animation-delay: 0.4s; }
+
+    @keyframes pulse-dot {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+    .loading-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #6366f1;
+      animation: pulse-dot 1.4s infinite ease-in-out;
+    }
+    .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+    .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    .char-count { transition: color 0.2s; }
+
+    .copy-btn {
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .result-card:hover .copy-btn {
+      opacity: 1;
+    }
+    @media (hover: none) {
+      .copy-btn { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="max-w-2xl mx-auto px-4 py-8 sm:py-12">
+
+    <!-- Header -->
+    <header class="text-center mb-8">
+      <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">卖点提炼器</h1>
+      <p class="text-gray-500 text-lg">AI 帮你快速提炼产品核心卖点</p>
+    </header>
+
+    <!-- Input Section -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+      <!-- Example Buttons -->
+      <div class="flex gap-2 mb-4">
+        <button onclick="fillExample(0)" class="example-btn text-sm px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
+          💡 试试：AI自动化咨询
+        </button>
+        <button onclick="fillExample(1)" class="example-btn text-sm px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
+          💅 试试：手工穿戴甲
+        </button>
+      </div>
+
+      <!-- Textarea -->
+      <div class="relative">
+        <textarea
+          id="input"
+          rows="4"
+          maxlength="500"
+          placeholder="描述你的产品或服务，比如：我做穿戴甲定制，主打手绘设计..."
+          class="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-800 placeholder-gray-400 text-base leading-relaxed"
+          oninput="updateCharCount()"
+        ></textarea>
+        <span id="charCount" class="char-count absolute bottom-3 right-3 text-xs text-gray-400">0/500</span>
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        id="submitBtn"
+        onclick="generate()"
+        class="w-full mt-4 py-3 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors text-base disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        ✨ 提炼卖点
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="hidden text-center py-12">
+      <div class="mb-4">
+        <span class="loading-dot"></span>
+        <span class="loading-dot"></span>
+        <span class="loading-dot"></span>
+      </div>
+      <p id="loadingText" class="text-gray-500">AI 正在分析你的产品...</p>
+    </div>
+
+    <!-- Error -->
+    <div id="error" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-red-600 text-sm"></div>
+
+    <!-- Results -->
+    <div id="results" class="hidden space-y-4">
+
+      <!-- 价值主张 -->
+      <div class="result-card fade-in-up opacity-0 bg-white rounded-2xl shadow-sm border border-gray-200 p-6 relative">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">💎</span>
+            <h2 class="font-semibold text-gray-800">一句话价值主张</h2>
+          </div>
+          <button onclick="copyCard(this, 'r-value')" class="copy-btn text-xs text-gray-400 hover:text-indigo-600 px-2 py-1 rounded-md hover:bg-indigo-50 transition-colors">复制</button>
+        </div>
+        <p id="r-value" class="text-xl font-medium text-indigo-700 leading-relaxed"></p>
+      </div>
+
+      <!-- 核心卖点 -->
+      <div class="result-card fade-in-up opacity-0 bg-white rounded-2xl shadow-sm border border-gray-200 p-6 relative">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🎯</span>
+            <h2 class="font-semibold text-gray-800">核心卖点</h2>
+          </div>
+          <button onclick="copyCard(this, 'r-points')" class="copy-btn text-xs text-gray-400 hover:text-indigo-600 px-2 py-1 rounded-md hover:bg-indigo-50 transition-colors">复制</button>
+        </div>
+        <div id="r-points" class="space-y-3"></div>
+      </div>
+
+      <!-- 目标用户 -->
+      <div class="result-card fade-in-up opacity-0 bg-white rounded-2xl shadow-sm border border-gray-200 p-6 relative">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">👤</span>
+            <h2 class="font-semibold text-gray-800">目标用户画像</h2>
+          </div>
+          <button onclick="copyCard(this, 'r-user')" class="copy-btn text-xs text-gray-400 hover:text-indigo-600 px-2 py-1 rounded-md hover:bg-indigo-50 transition-colors">复制</button>
+        </div>
+        <p id="r-user" class="text-gray-700 leading-relaxed"></p>
+      </div>
+
+      <!-- 电梯演讲 -->
+      <div class="result-card fade-in-up opacity-0 bg-white rounded-2xl shadow-sm border border-gray-200 p-6 relative">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🎤</span>
+            <h2 class="font-semibold text-gray-800">30秒电梯演讲</h2>
+          </div>
+          <button onclick="copyCard(this, 'r-pitch')" class="copy-btn text-xs text-gray-400 hover:text-indigo-600 px-2 py-1 rounded-md hover:bg-indigo-50 transition-colors">复制</button>
+        </div>
+        <p id="r-pitch" class="text-gray-700 leading-relaxed"></p>
+      </div>
+
+      <!-- 朋友圈文案 -->
+      <div class="result-card fade-in-up opacity-0 bg-white rounded-2xl shadow-sm border border-gray-200 p-6 relative">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">📱</span>
+            <h2 class="font-semibold text-gray-800">朋友圈文案</h2>
+          </div>
+          <button onclick="copyCard(this, 'r-wechat')" class="copy-btn text-xs text-gray-400 hover:text-indigo-600 px-2 py-1 rounded-md hover:bg-indigo-50 transition-colors">复制</button>
+        </div>
+        <p id="r-wechat" class="text-gray-700 leading-relaxed whitespace-pre-line"></p>
+      </div>
+
+      <!-- Copy All Button -->
+      <button
+        onclick="copyAll()"
+        class="w-full py-3 px-6 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-xl transition-colors text-base"
+      >
+        📋 一键复制全部结果
+      </button>
+
+      <!-- CTA -->
+      <div class="bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-4">
+        <div class="flex-shrink-0 bg-white rounded-xl p-2 border border-gray-100">
+          <img src="qrcode.png" alt="微信二维码" class="w-20 h-20 object-contain"
+               onerror="this.parentElement.parentElement.style.display='none'" />
+        </div>
+        <div>
+          <p class="text-sm font-medium text-gray-700 mb-0.5">想学用 AI 做这样的工具？</p>
+          <p class="text-xs text-gray-400">扫码加微信，发送「卖点」领取《一人公司商业包装指南》</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center mt-12 text-sm text-gray-400">
+      Powered by 星芒AI · Vibe Coding 演示项目
+    </footer>
+  </div>
+
+  <script>
+    const examples = [
+      '我做AI自动化咨询，帮中小企业用AI工具替代重复性工作，降低人力成本，一个人就能服务50家客户',
+      '我卖手工穿戴甲，主打原创手绘设计，可以根据客户喜好定制图案，比美甲店便宜一半还能反复使用'
+    ];
+
+    // loading 文案轮播
+    const loadingTexts = [
+      'AI 正在分析你的产品...',
+      '正在提炼核心卖点...',
+      '正在撰写电梯演讲稿...',
+      '正在打磨朋友圈文案...',
+      '马上就好...'
+    ];
+    let loadingTimer = null;
+
+    function startLoadingTexts() {
+      let idx = 0;
+      const el = document.getElementById('loadingText');
+      el.textContent = loadingTexts[0];
+      loadingTimer = setInterval(() => {
+        idx++;
+        if (idx < loadingTexts.length) {
+          el.textContent = loadingTexts[idx];
+        }
+      }, 3000);
+    }
+
+    function stopLoadingTexts() {
+      if (loadingTimer) {
+        clearInterval(loadingTimer);
+        loadingTimer = null;
+      }
+    }
+
+    function fillExample(i) {
+      const input = document.getElementById('input');
+      input.value = examples[i];
+      updateCharCount();
+      input.focus();
+    }
+
+    function updateCharCount() {
+      const input = document.getElementById('input');
+      const count = document.getElementById('charCount');
+      const len = input.value.length;
+      count.textContent = `${len}/500`;
+      count.style.color = len > 450 ? '#ef4444' : len > 350 ? '#f59e0b' : '#9ca3af';
+    }
+
+    async function generate() {
+      const input = document.getElementById('input');
+      const description = input.value.trim();
+
+      if (!description) {
+        showError('请先输入你的产品或服务描述');
+        return;
+      }
+
+      const btn = document.getElementById('submitBtn');
+      const loading = document.getElementById('loading');
+      const results = document.getElementById('results');
+      const error = document.getElementById('error');
+
+      // 重置状态：隐藏旧结果和错误
+      btn.disabled = true;
+      btn.textContent = '提炼中...';
+      results.classList.add('hidden');
+      error.classList.add('hidden');
+      loading.classList.remove('hidden');
+      startLoadingTexts();
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ description })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || '请求失败');
+        }
+
+        renderResults(data.result);
+      } catch (err) {
+        showError(err.message || '网络错误，请重试');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✨ 再来一次';
+        stopLoadingTexts();
+        loading.classList.add('hidden');
+      }
+    }
+
+    function renderResults(r) {
+      // 价值主张
+      document.getElementById('r-value').textContent = r.valueProposition;
+
+      // 核心卖点
+      const pointsEl = document.getElementById('r-points');
+      pointsEl.innerHTML = r.sellingPoints.map((p, i) => `
+        <div class="flex gap-3 items-start">
+          <span class="flex-shrink-0 w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-semibold">${i + 1}</span>
+          <div>
+            <span class="font-semibold text-gray-800">${escapeHtml(p.title)}</span>
+            <span class="text-gray-500 ml-1">—</span>
+            <span class="text-gray-600 ml-1">${escapeHtml(p.description)}</span>
+          </div>
+        </div>
+      `).join('');
+
+      // 目标用户
+      document.getElementById('r-user').textContent = r.targetUser;
+
+      // 电梯演讲
+      document.getElementById('r-pitch').textContent = r.elevatorPitch;
+
+      // 朋友圈文案
+      document.getElementById('r-wechat').textContent = r.wechatCopy;
+
+      // 重置动画
+      document.querySelectorAll('.result-card').forEach(card => {
+        card.style.animation = 'none';
+        card.offsetHeight;
+        card.style.animation = '';
+      });
+
+      document.getElementById('results').classList.remove('hidden');
+
+      // 滚动到结果区第一张卡片
+      setTimeout(() => {
+        document.querySelector('.result-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+
+    function showError(msg) {
+      const error = document.getElementById('error');
+      error.textContent = msg;
+      error.classList.remove('hidden');
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // 单卡片复制
+    async function copyCard(btn, elementId) {
+      const text = document.getElementById(elementId).textContent.trim();
+      try {
+        await navigator.clipboard.writeText(text);
+        const orig = btn.textContent;
+        btn.textContent = '已复制';
+        btn.classList.add('text-indigo-600');
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove('text-indigo-600'); }, 1500);
+      } catch {
+        fallbackCopy(text);
+      }
+    }
+
+    // 全部复制
+    async function copyAll() {
+      const r = {
+        value: document.getElementById('r-value').textContent,
+        points: document.getElementById('r-points').textContent.trim(),
+        user: document.getElementById('r-user').textContent,
+        pitch: document.getElementById('r-pitch').textContent,
+        wechat: document.getElementById('r-wechat').textContent
+      };
+
+      const text = `💎 价值主张
+${r.value}
+
+🎯 核心卖点
+${r.points}
+
+👤 目标用户
+${r.user}
+
+🎤 30秒电梯演讲
+${r.pitch}
+
+📱 朋友圈文案
+${r.wechat}`;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        const btn = event.target.closest('button');
+        const original = btn.textContent;
+        btn.textContent = '✅ 已复制到剪贴板';
+        setTimeout(() => btn.textContent = original, 2000);
+      } catch {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+  </script>
+</body>
+</html>

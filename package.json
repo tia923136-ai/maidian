@@ -1,0 +1,13 @@
+{
+  "name": "maidian",
+  "version": "1.0.0",
+  "description": "AI卖点提炼器 - Vibe Coding演示项目",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}
